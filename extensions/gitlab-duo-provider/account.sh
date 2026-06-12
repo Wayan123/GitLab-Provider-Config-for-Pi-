@@ -27,7 +27,7 @@ Usage:
 
 Examples:
   account.sh link
-  account.sh add work future-org-group/future-org-project
+  account.sh add work my-group/my-project
   account.sh switch work
   account.sh test claude_fable_5
 
@@ -236,7 +236,7 @@ except Exception:
  print('$HOME/.pi/agent/tmp/gitlab-duo-workspace')
 PY
 )"
-    duo --cwd "$workspace" --model "$model" run --goal "Jawab hanya satu kata: OK"
+    duo --cwd "$workspace" --model "$model" run --goal "Reply with exactly one word: OK"
     ;;
   remove)
     name="${2:-}"

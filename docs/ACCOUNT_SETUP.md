@@ -1,164 +1,130 @@
-# Panduan Lengkap Konfigurasi GitLab Duo untuk Pi CLI
+# Complete GitLab Duo Account Setup for Pi CLI
 
-Dokumen ini menjelaskan cara menyiapkan akun GitLab baru agar bisa dipakai sebagai provider model `gitlab-duo/*` di Pi CLI.
+This guide explains how to configure a new GitLab account so it can be used by the `gitlab-duo/*` provider in Pi CLI.
 
-> Jangan simpan token asli di dokumen ini. Token hanya boleh dipaste ke prompt `/login` atau script lokal.
+> Do not write real tokens in this document. Paste tokens only into Pi `/login` prompts or local helper scripts.
 
 ---
 
-## 1. Konsep singkat
+## 1. Overview
 
-Pi memakai extension lokal:
+The provider uses this local Pi extension:
 
 ```txt
-~/.pi/agent/extensions/gitlab-duo-provider/index.ts
+extensions/gitlab-duo-provider/index.ts
 ```
 
-Extension ini memanggil GitLab Duo CLI:
+The extension calls GitLab Duo CLI:
 
 ```txt
 duo
 ```
 
-Agar Duo CLI berjalan, akun GitLab harus punya:
+A working account needs:
 
-1. Token valid.
-2. Akses GitLab Duo.
-3. Experimental/beta Duo features aktif di group default akun tersebut.
-4. Workspace git yang cocok atau fallback workspace lokal.
+1. A verified GitLab account.
+2. A GitLab group where the user is Owner.
+3. A project inside that group.
+4. GitLab Duo Core enabled for the group.
+5. Experimental and beta GitLab Duo features enabled for the group.
+6. A valid token or OAuth login.
+7. A fallback Git workspace for non-GitLab projects.
 
 ---
 
-## 2. File penting
+## 2. Security model
+
+Local sensitive files may include tokens:
 
 ```txt
-~/.pi/agent/extensions/gitlab-duo-provider/index.ts
-~/.pi/agent/extensions/gitlab-duo-provider/install.sh
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh
-~/.pi/agent/gitlab-duo-provider.json
-~/.pi/agent/gitlab-duo-profiles/
 ~/.gitlab/storage.json
 ~/.pi/agent/auth.json
-```
-
-Token/account profile tersimpan lokal di:
-
-```txt
 ~/.pi/agent/gitlab-duo-profiles/*.json
-~/.gitlab/storage.json
-~/.pi/agent/auth.json
 ```
 
-Permission yang diharapkan:
+Recommended permissions:
 
 ```txt
-0600 untuk file token
-0700 untuk folder profile
+0600 for token files
+0700 for profile directories
 ```
+
+Never commit these files to a public repository.
 
 ---
 
-## 3. Membuat akun GitLab baru
+## 3. Create a new GitLab account
 
-### 3.1 Buat akun GitLab
+1. Open:
+   ```txt
+   https://gitlab.com
+   ```
+2. Create or sign in to an account.
+3. Verify the account email address.
 
-Buat/login akun baru di:
+---
 
-```txt
-https://gitlab.com
-```
+## 4. Create a group
 
-Pastikan email sudah diverifikasi.
-
-### 3.2 Buat group baru
-
-Contoh nama group:
-
-```txt
-future-org-group1
-```
-
-Buat dari:
+Create a group from:
 
 ```txt
 GitLab → Groups → New group
 ```
 
-Pastikan user kamu adalah **Owner** group.
-
-### 3.3 Buat project kosong di group
-
-Contoh:
+Example placeholder:
 
 ```txt
-future-org-group1/future-org-project
+my-group
 ```
 
-Buat dari:
-
-```txt
-Group → New project → Blank project
-```
-
-Project boleh kosong, yang penting path-nya ada.
+The active user must be **Owner** of the group.
 
 ---
 
-## 4. Aktifkan GitLab Duo di group
+## 5. Create a project
 
-Masuk ke group, bukan project:
+Create a blank project in the group.
+
+Example placeholder:
 
 ```txt
-Group: future-org-group1
-→ Settings
-→ GitLab Duo
+my-group/my-project
 ```
 
-Aktifkan:
+The project may be empty. It only needs to exist and be accessible to the active GitLab account.
+
+---
+
+## 6. Enable GitLab Duo for the group
+
+Open the group settings, not the project settings:
+
+```txt
+Group → Settings → GitLab Duo
+```
+
+Enable:
 
 ```txt
 GitLab Duo Core: Enabled
 Experiment and beta features: Enabled
 ```
 
-Jika menu tidak muncul:
+If the menu is not visible:
 
-1. Pastikan kamu berada di halaman **Group**, bukan Project.
-2. Pastikan role kamu **Owner**.
-3. Coba URL langsung:
-
-```txt
-https://gitlab.com/groups/future-org-group1/-/settings/gitlab_duo
-```
+1. Confirm that you are on the group page, not the project page.
+2. Confirm that your role is Owner.
+3. Try the direct URL:
+   ```txt
+   https://gitlab.com/groups/<group-path>/-/settings/gitlab_duo
+   ```
 
 ---
 
-## 5. Membuat token GitLab
+## 7. Create a token
 
-### Opsi A — via Pi `/login`
-
-Di Pi:
-
-```txt
-/login
-```
-
-Pilih salah satu:
-
-```txt
-Use a subscription
-→ GitLab Duo CLI
-→ Create/paste GitLab token
-```
-
-atau:
-
-```txt
-Use an API key
-→ GitLab Duo CLI
-```
-
-Scope token yang harus dicentang:
+### Required scopes
 
 ```txt
 api
@@ -166,114 +132,162 @@ ai_features
 read_repository
 ```
 
-Opsional jika ingin push ke repo:
+Optional for repository write/push workflows:
 
 ```txt
 write_repository
 ```
 
-### Opsi B — via helper script
-
-Tampilkan link pembuatan token:
+### Create a token from the helper
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh link
+pi-gitlab-duo-account link
 ```
 
-Buka URL yang dicetak, buat token, lalu simpan sebagai profile:
+Open the printed URL, create the token, then copy it once. GitLab will not show the token again.
+
+### Validate a token manually
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh add akun-baru future-org-group1/future-org-project
+curl -sS -w "\nHTTP:%{http_code}\n" \
+  --header "PRIVATE-TOKEN: YOUR_TOKEN" \
+  https://gitlab.com/api/v4/personal_access_tokens/self
 ```
 
-Saat diminta, paste token. Input tidak akan terlihat.
+Expected:
+
+```txt
+HTTP:200
+```
+
+If the response is `401`, the token is wrong, expired, revoked, or missing required scopes.
 
 ---
 
-## 6. Mengaktifkan profile akun
-
-Jika pakai helper script:
+## 8. Install the Pi package
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh switch akun-baru
+pi install git:github.com/Wayan123/GitLab-Provider-Config-for-Pi-
 ```
 
-Cek profile aktif:
-
-```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh current
-```
-
-List semua profile:
-
-```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh list
-```
-
-Setelah switch, di Pi jalankan:
+Reload Pi:
 
 ```txt
 /reload
 ```
 
-atau restart Pi.
-
 ---
 
-## 7. Konfigurasi fallback project/workspace
+## 9. Configure the fallback project
 
-Untuk mengubah fallback project default:
+Use the group/project created earlier:
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/install.sh future-org-group1/future-org-project
+pi-gitlab-duo-install my-group/my-project
 ```
 
-Config akan tersimpan di:
+If helper commands are not installed globally, run from the package directory:
+
+```bash
+./extensions/gitlab-duo-provider/install.sh my-group/my-project
+```
+
+This creates or updates:
 
 ```txt
 ~/.pi/agent/gitlab-duo-provider.json
 ```
 
-Contoh isi:
+Example public-safe config:
 
 ```json
 {
   "baseUrl": "https://gitlab.com",
-  "defaultProjectPath": "future-org-group1/future-org-project",
-  "defaultWorkspace": "/home/wayan/.pi/agent/tmp/gitlab-duo-workspaces/akun-baru",
+  "defaultProjectPath": "my-group/my-project",
+  "defaultWorkspace": "/home/USER/.pi/agent/tmp/gitlab-duo-workspace",
   "preferProjectGitLabRemote": true,
   "fallbackToDefaultWorkspace": true,
-  "logLevel": "debug",
-  "activeProfile": "akun-baru"
+  "logLevel": "debug"
 }
 ```
 
-Perilaku provider:
+---
 
-1. Jika folder kerja sekarang adalah repo GitLab → pakai repo itu.
-2. Jika folder kerja bukan repo GitLab → pakai fallback workspace.
-3. Jika login pakai token akun berbeda → provider membuat token workspace khusus tanpa remote stale.
+## 10. Authenticate from Pi `/login`
+
+Inside Pi:
+
+```txt
+/login
+```
+
+Choose one of these flows.
+
+### Flow A: subscription-style GitLab Duo login
+
+```txt
+Use a subscription
+→ GitLab Duo CLI
+```
+
+Then choose:
+
+```txt
+Use existing Duo CLI login/config
+Login in browser (OAuth link)
+Create/paste GitLab token
+```
+
+### Flow B: API key login
+
+```txt
+Use an API key
+→ GitLab Duo CLI
+```
+
+Paste the GitLab token when prompted.
+
+After login, reload Pi if needed:
+
+```txt
+/reload
+```
 
 ---
 
-## 8. Tes Duo CLI langsung
+## 11. Authenticate with profile helper
 
-Tes akun aktif:
-
-```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh test claude_fable_5
-```
-
-Atau manual:
+Add a profile:
 
 ```bash
-duo \
-  --cwd ~/.pi/agent/tmp/gitlab-duo-workspaces/akun-baru \
-  --model claude_fable_5 \
-  run --goal "Jawab hanya satu kata: OK"
+pi-gitlab-duo-account add work my-group/my-project
 ```
 
-Target output:
+Switch to that profile:
+
+```bash
+pi-gitlab-duo-account switch work
+```
+
+Inspect the active profile:
+
+```bash
+pi-gitlab-duo-account current
+```
+
+List profiles:
+
+```bash
+pi-gitlab-duo-account list
+```
+
+Test the active profile:
+
+```bash
+pi-gitlab-duo-account test claude_fable_5
+```
+
+Expected output:
 
 ```txt
 OK
@@ -281,9 +295,9 @@ OK
 
 ---
 
-## 9. Tes dari Pi CLI
+## 12. Verify from Pi CLI
 
-List model:
+List models:
 
 ```bash
 pi --list-models gitlab-duo
@@ -294,45 +308,38 @@ Smoke test:
 ```bash
 pi -p --no-tools \
   --model gitlab-duo/claude_fable_5 \
-  "Jawab hanya satu kata: OK"
+  "Reply with exactly one word: OK"
 ```
 
-Target output:
+Expected output:
 
 ```txt
 OK
 ```
 
-Di TUI Pi, pilih model:
-
-```txt
-gitlab-duo/claude_fable_5
-```
-
 ---
 
-## 10. Ganti akun
+## 13. Switch accounts
 
-Misal ada dua profile:
-
-```txt
-wayangpt17
-akun-baru
-```
-
-Switch ke akun baru:
+Add another account:
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh switch akun-baru
+pi-gitlab-duo-account add personal personal-group/personal-project
 ```
 
-Switch balik:
+Switch to it:
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh switch wayangpt17
+pi-gitlab-duo-account switch personal
 ```
 
-Lalu di Pi:
+Switch back:
+
+```bash
+pi-gitlab-duo-account switch work
+```
+
+Reload Pi after switching:
 
 ```txt
 /reload
@@ -340,195 +347,141 @@ Lalu di Pi:
 
 ---
 
-## 11. Troubleshooting
+## 14. Troubleshooting
 
-### 11.1 Token kosong
+### Token length is zero
 
-Gejala:
+If you used:
 
-```txt
-TOKEN_LEN=0
+```bash
+--api-key "$GITLAB_TOKEN"
 ```
 
-Solusi:
+but `GITLAB_TOKEN` is empty, the provider receives no usable token.
+
+Check:
 
 ```bash
 echo "TOKEN_LEN=${#GITLAB_TOKEN}"
 ```
 
-Jika kosong, jangan pakai `--api-key "$GITLAB_TOKEN"`. Gunakan `/login` atau `account.sh switch`.
+If it is zero, use `/login` or profile switching instead.
 
----
+### Invalid token
 
-### 11.2 Token invalid
-
-Gejala:
+Error:
 
 ```txt
 Token is invalid or expired. Reason: invalid_token
 ```
 
-Validasi token:
+Validate the token with:
 
 ```bash
 curl -sS -w "\nHTTP:%{http_code}\n" \
-  --header "PRIVATE-TOKEN: TOKEN_KAMU" \
+  --header "PRIVATE-TOKEN: YOUR_TOKEN" \
   https://gitlab.com/api/v4/personal_access_tokens/self
 ```
 
-Harus:
+Expected:
 
 ```txt
 HTTP:200
 ```
 
-Jika `401`, buat token ulang.
+### Group not found
 
----
-
-### 11.3 Group Not Found / 404
-
-Gejala:
+Error:
 
 ```txt
 404 Group Not Found
-Failed to verify access to experimental and beta GitLab Duo features for group "future-org-group"
+Failed to verify access to experimental and beta GitLab Duo features
 ```
 
-Penyebab:
+Common causes:
 
-- Token milik akun lain.
-- Config masih menunjuk ke group lama.
-- Akun baru tidak punya akses ke group lama.
+- The token belongs to a different account.
+- The configured fallback project points to a group the token cannot access.
+- The active profile is not the expected profile.
 
-Solusi:
+Fix:
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh switch akun-yang-benar
+pi-gitlab-duo-account current
+pi-gitlab-duo-account switch <correct-profile>
+pi-gitlab-duo-install accessible-group/accessible-project
 ```
 
-atau ubah fallback project:
+### Beta features are disabled
 
-```bash
-~/.pi/agent/extensions/gitlab-duo-provider/install.sh group-baru/project-baru
-```
-
----
-
-### 11.4 Beta features belum aktif
-
-Gejala:
+Error:
 
 ```txt
 Experimental and beta GitLab Duo features are not turned on for your group.
 ```
 
-Solusi:
+Fix:
 
 ```txt
 Group → Settings → GitLab Duo → Experiment and beta features: Enabled
 ```
 
-Pastikan group yang disebut di log adalah group akun aktif, misalnya:
+Make sure this is the default group/namespace for the active token.
 
-```txt
-future-org-group1
-```
+### Current directory is not a GitLab repo
 
-bukan group lama.
-
----
-
-### 11.5 Repo bukan GitLab
-
-Gejala:
-
-```txt
-Could not find GitLab remote info
-fatal: not a git repository
-```
-
-Solusi sudah otomatis: provider fallback ke workspace default. Jika masih error:
+The provider should automatically fall back to the configured workspace. If it still fails, reconfigure:
 
 ```bash
-~/.pi/agent/extensions/gitlab-duo-provider/install.sh group/project
+pi-gitlab-duo-install my-group/my-project
 ```
 
 ---
 
-### 11.6 Debug log panjang keluar ke chat
-
-Provider sudah dipatch agar error mengambil bagian relevan dari akhir log. Jika masih terjadi, reload:
+## 15. New-account checklist
 
 ```txt
-/reload
+[ ] GitLab account email is verified
+[ ] Group is created
+[ ] User is Owner of the group
+[ ] Project is created in the group
+[ ] GitLab Duo Core is enabled
+[ ] Experiment and beta features are enabled
+[ ] Token has api + ai_features + read_repository scopes
+[ ] Pi package is installed
+[ ] Fallback project is configured
+[ ] Profile is added or /login is completed
+[ ] Pi is reloaded/restarted
+[ ] account helper test returns OK
+[ ] Pi smoke test returns OK
 ```
-
-atau restart Pi.
 
 ---
 
-## 12. Model GitLab Duo yang tersedia
-
-Contoh model:
-
-```txt
-gitlab-duo/claude_fable_5
-gitlab-duo/claude_sonnet_4_6
-gitlab-duo/gpt_5
-gitlab-duo/gpt_5_codex
-gitlab-duo/kimi_k2_6_fireworks
-gitlab-duo/minimax_m2_7_fireworks
-gitlab-duo/glm_5_1_fireworks
-```
-
-Cek lengkap:
+## 16. Quick command reference
 
 ```bash
-pi --list-models gitlab-duo
-```
+# Install package into Pi
+pi install git:github.com/Wayan123/GitLab-Provider-Config-for-Pi-
 
----
+# Configure fallback project
+pi-gitlab-duo-install my-group/my-project
 
-## 13. Checklist akun baru
+# Create token URL
+pi-gitlab-duo-account link
 
-Gunakan checklist ini setiap membuat akun baru:
+# Add account profile
+pi-gitlab-duo-account add work my-group/my-project
 
-```txt
-[ ] Email GitLab akun baru sudah verified
-[ ] Group baru dibuat
-[ ] User adalah Owner group
-[ ] Project kosong dibuat di group
-[ ] GitLab Duo Core enabled
-[ ] Experiment and beta features enabled
-[ ] Token dibuat dengan api + ai_features + read_repository
-[ ] Profile ditambah via account.sh add
-[ ] Profile diaktifkan via account.sh switch
-[ ] Pi di-/reload atau restart
-[ ] duo/account.sh test menghasilkan OK
-[ ] pi smoke test menghasilkan OK
-```
+# Switch account profile
+pi-gitlab-duo-account switch work
 
----
+# Inspect current profile
+pi-gitlab-duo-account current
 
-## 14. Command ringkas
+# Test Duo CLI
+pi-gitlab-duo-account test claude_fable_5
 
-```bash
-# Link token
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh link
-
-# Tambah akun
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh add akun-baru future-org-group1/future-org-project
-
-# Aktifkan akun
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh switch akun-baru
-
-# Cek aktif
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh current
-
-# Tes Duo
-~/.pi/agent/extensions/gitlab-duo-provider/account.sh test claude_fable_5
-
-# Tes Pi
-pi -p --no-tools --model gitlab-duo/claude_fable_5 "Jawab hanya satu kata: OK"
+# Test Pi provider
+pi -p --no-tools --model gitlab-duo/claude_fable_5 "Reply with exactly one word: OK"
 ```

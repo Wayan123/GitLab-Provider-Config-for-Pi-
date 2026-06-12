@@ -15,12 +15,17 @@ Environment overrides:
   GITLAB_DUO_CWD        Default: ~/.pi/agent/tmp/gitlab-duo-workspace
 
 Example:
-  pi-gitlab-duo-install future-org-group/future-org-project
+  pi-gitlab-duo-install my-group/my-project
 EOF
   exit 0
 fi
 
-PROJECT_PATH="${1:-${GITLAB_DUO_PROJECT_PATH:-future-org-group/future-org-project}}"
+PROJECT_PATH="${1:-${GITLAB_DUO_PROJECT_PATH:-}}"
+if [[ -z "$PROJECT_PATH" ]]; then
+  echo "ERROR: group/project is required for public installs." >&2
+  echo "Example: pi-gitlab-duo-install my-group/my-project" >&2
+  exit 2
+fi
 BASE_URL="${GITLAB_BASE_URL:-${GITLAB_URL:-https://gitlab.com}}"
 WORKSPACE="${GITLAB_DUO_CWD:-$HOME/.pi/agent/tmp/gitlab-duo-workspace}"
 CONFIG="$HOME/.pi/agent/gitlab-duo-provider.json"
@@ -63,7 +68,7 @@ Workspace: $WORKSPACE
 Remote:    $REMOTE_URL
 
 Next:
-  1. Make sure Duo CLI works: duo --cwd "$WORKSPACE" --model claude_fable_5 run --goal "Jawab hanya satu kata: OK"
+  1. Make sure Duo CLI works: duo --cwd "$WORKSPACE" --model claude_fable_5 run --goal "Reply with exactly one word: OK"
   2. Reload/restart Pi.
   3. Use model: gitlab-duo/claude_fable_5
 

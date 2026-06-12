@@ -137,7 +137,7 @@ function loadConfig(): Required<GitLabDuoProviderConfig> {
 
   return {
     baseUrl: process.env.GITLAB_BASE_URL || process.env.GITLAB_URL || fileConfig.baseUrl || DEFAULT_GITLAB_BASE_URL,
-    defaultProjectPath: process.env.GITLAB_DUO_PROJECT_PATH || fileConfig.defaultProjectPath || "future-org-group/future-org-project",
+    defaultProjectPath: process.env.GITLAB_DUO_PROJECT_PATH || fileConfig.defaultProjectPath || "",
     defaultWorkspace: process.env.GITLAB_DUO_CWD || fileConfig.defaultWorkspace || DEFAULT_DUO_WORKSPACE,
     preferProjectGitLabRemote: process.env.GITLAB_DUO_ALWAYS_USE_DEFAULT === "1" ? false : fileConfig.preferProjectGitLabRemote ?? true,
     fallbackToDefaultWorkspace: fileConfig.fallbackToDefaultWorkspace ?? true,
@@ -145,8 +145,10 @@ function loadConfig(): Required<GitLabDuoProviderConfig> {
   };
 }
 
-function baseUrlToGitRemote(baseUrl: string, projectPath: string): string {
-  return `${baseUrl.replace(/\/$/, "")}/${projectPath.replace(/^\//, "")}.git`;
+function baseUrlToGitRemote(baseUrl: string, projectPath: string): string | undefined {
+  const normalizedProjectPath = projectPath.replace(/^\//, "").trim();
+  if (!normalizedProjectPath) return undefined;
+  return `${baseUrl.replace(/\/$/, "")}/${normalizedProjectPath}.git`;
 }
 
 function findDuoBin(): string | undefined {
@@ -205,7 +207,7 @@ function ensureDefaultWorkspace(config: Required<GitLabDuoProviderConfig>): stri
     spawnSync("git", ["init"], { cwd: workspace, stdio: "ignore" });
   }
   const remoteUrl = baseUrlToGitRemote(config.baseUrl, config.defaultProjectPath);
-  if (isGitRepo(workspace)) {
+  if (isGitRepo(workspace) && remoteUrl) {
     const currentRemote = gitOutput(["-C", workspace, "remote", "get-url", "origin"]);
     if (currentRemote) {
       spawnSync("git", ["-C", workspace, "remote", "set-url", "origin", remoteUrl], { stdio: "ignore" });
@@ -518,7 +520,7 @@ async function loginWithBrowserOAuth(callbacks: OAuthLoginCallbacks, baseUrl: st
 
   callbacks.onAuth({
     url: `${baseUrl.replace(/\/$/, "")}/oauth/authorize?${authParams.toString()}`,
-    instructions: "Login GitLab di browser, lalu paste redirect/callback URL di bawah.",
+    instructions: "Log in to GitLab in your browser, then paste the redirect/callback URL below.",
   });
 
   const callbackUrl = await callbacks.onPrompt({ message: "Paste callback URL dari browser:" });
@@ -557,7 +559,7 @@ async function loginWithBrowserOAuth(callbacks: OAuthLoginCallbacks, baseUrl: st
 async function loginWithPat(callbacks: OAuthLoginCallbacks, baseUrl: string): Promise<OAuthCredentials> {
   callbacks.onAuth({
     url: personalAccessTokenUrl(baseUrl),
-    instructions: "Buat token dengan scope: api, ai_features, read_repository. Setelah token dibuat, paste token di prompt berikutnya.",
+    instructions: "Create a token with scopes: api, ai_features, read_repository. After creating it, paste the token in the next prompt.",
   });
   const token = normalizeToken(await callbacks.onPrompt({ message: "Paste GitLab Personal Access Token:" }));
   if (!token) throw new Error("Token cannot be empty");

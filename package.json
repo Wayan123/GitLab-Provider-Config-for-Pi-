@@ -1,6 +1,6 @@
 {
   "name": "gitlab-provider-config-for-pi",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GitLab Duo CLI provider and account/profile configuration helpers for Pi CLI.",
   "type": "module",
   "private": false,
@@ -32,6 +32,7 @@
   },
   "files": [
     "README.md",
+    "SECURITY.md",
     "docs/",
     "extensions/",
     "bin/",
