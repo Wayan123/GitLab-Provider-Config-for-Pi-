@@ -1,0 +1,27 @@
+# dependencies / generated
+node_modules/
+dist/
+build/
+coverage/
+*.tgz
+
+# local env/secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+
+# local Pi/GitLab state - never commit real auth
+.pi/
+.gitlab/
+gitlab-duo-profiles/
+*.token
+*token*.json
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+*.swp

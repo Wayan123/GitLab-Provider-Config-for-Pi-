@@ -1,0 +1,52 @@
+{
+  "name": "gitlab-provider-config-for-pi",
+  "version": "0.1.0",
+  "description": "GitLab Duo CLI provider and account/profile configuration helpers for Pi CLI.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-cli",
+    "gitlab-duo",
+    "gitlab",
+    "ai-provider",
+    "coding-agent"
+  ],
+  "homepage": "https://github.com/Wayan123/GitLab-Provider-Config-for-Pi-#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Wayan123/GitLab-Provider-Config-for-Pi-.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Wayan123/GitLab-Provider-Config-for-Pi-/issues"
+  },
+  "bin": {
+    "pi-gitlab-duo-account": "./bin/pi-gitlab-duo-account",
+    "pi-gitlab-duo-install": "./bin/pi-gitlab-duo-install"
+  },
+  "scripts": {
+    "verify": "bash scripts/verify.sh",
+    "pi:install:local": "pi install .",
+    "pi:install:github": "pi install git:github.com/Wayan123/GitLab-Provider-Config-for-Pi-"
+  },
+  "files": [
+    "README.md",
+    "docs/",
+    "extensions/",
+    "bin/",
+    "scripts/"
+  ],
+  "pi": {
+    "extensions": [
+      "./extensions/gitlab-duo-provider"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
